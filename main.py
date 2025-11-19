@@ -1,11 +1,12 @@
 import requests
 from flask import Flask, request
 from flask_cors import CORS
+import os
 
 app = Flask(__name__)
 CORS(app)
 
-API_KEY = "_DyMvda2Q_Z00viGIET8A"
+API_KEY = os.getenv("API_KEY")
 BIBLE_ID = "de4e12af7f28f599-02"
 
 @app.route('/api/bibles')
