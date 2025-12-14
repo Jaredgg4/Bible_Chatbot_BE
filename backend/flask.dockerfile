@@ -2,10 +2,12 @@ FROM python:3.12-slim
 
 WORKDIR /app
 
-COPY requirements.txt ./
+# Copy requirements from parent directory
+COPY ../requirements.txt ./
 RUN pip install -r requirements.txt
 
-COPY . .
+# Copy app.py from current directory
+COPY app.py ./
 
 EXPOSE 4000
 
