@@ -9,4 +9,5 @@ COPY . .
 
 EXPOSE 4000
 
-CMD ["flask", "run", "--host", "0.0.0.0", "--port", "4000"]
+# Use shell form to allow environment variable expansion
+CMD flask run --host 0.0.0.0 --port ${PORT:-4000}
