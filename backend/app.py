@@ -5,6 +5,8 @@ import os
 import psycopg2
 from flask_sqlalchemy import SQLAlchemy
 import bcrypt
+from PIL import Image
+import base64
 
 app = Flask(__name__)
 CORS(app)
@@ -16,13 +18,20 @@ class Users(db.Model):
     username = db.Column(db.String(80), unique=True, nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
     password = db.Column(db.String(120), nullable=False)
+    avatar = db.Column(db.LargeBinary, nullable=False)
 
     def json(self):
+        # Convert binary avatar to base64 string for display
+        avatar_base64 = None
+        if self.avatar:
+            avatar_base64 = f"data:image/jpeg;base64,{base64.b64encode(self.avatar).decode('utf-8')}"
+        
         return {
             'id': self.id,
             'username': self.username,
             'email': self.email,
-            'password': self.password
+            'password': self.password,
+            'avatar': avatar_base64
         }
 
 with app.app_context():
@@ -40,10 +49,22 @@ def test():
 @app.route('/api/users', methods=['POST'])
 def signup():
     try:
-        data = request.get_json()
+        # Get form data instead of JSON
+        username = request.form.get('username')
+        email = request.form.get('email')
+        password = request.form.get('password')
+        avatar_file = request.files.get('avatar')
+        
+        if not username or not email or not password:
+            return make_response(jsonify({"error": "Username, email, and password are required"}), 400)
+        
         # Hash the password before storing
-        hashed_password = bcrypt.hashpw(data['password'].encode('utf-8'), bcrypt.gensalt())
-        new_user = Users(username=data['username'], email=data['email'], password=hashed_password.decode('utf-8'))
+        hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
+        
+        # Read avatar file if provided
+        avatar_bytes = avatar_file.read() if avatar_file else None
+        
+        new_user = Users(username=username, email=email, password=hashed_password.decode('utf-8'), avatar=avatar_bytes)
         db.session.add(new_user)
         db.session.commit()
         return make_response(jsonify({"id": new_user.id, "username": new_user.username, "email": new_user.email}), 201)
@@ -106,7 +127,8 @@ def get_user(id):
     try:
         user = Users.query.filter_by(id=id).first()
         if user:
-            return make_response(jsonify({"user": user.json()}), 200)
+            user_data = user.json()
+            return make_response(jsonify({"user": user_data}), 200)
         else:
             return make_response(jsonify({"error": "User not found"}), 404)
     except Exception as e:
