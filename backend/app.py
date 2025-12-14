@@ -11,7 +11,7 @@ import base64
 app = Flask(__name__)
 # Configure CORS to allow requests from your Vercel frontend
 CORS(app, resources={
-    r"/api/*": {
+    r"/*": {
         "origins": [
             "http://localhost:3000",  # Local development
             os.environ.get('FRONTEND_URL', '*')  # Production frontend URL
@@ -20,7 +20,16 @@ CORS(app, resources={
         "allow_headers": ["Content-Type", "Authorization"]
     }
 })
-app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL')
+
+# Database configuration with error handling
+database_url = os.environ.get('DATABASE_URL')
+if not database_url:
+    print("WARNING: DATABASE_URL not set. Database features will not work.")
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///temp.db'  # Fallback for testing
+else:
+    app.config['SQLALCHEMY_DATABASE_URI'] = database_url
+
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
 class Users(db.Model):
@@ -44,8 +53,13 @@ class Users(db.Model):
             'avatar': avatar_base64
         }
 
-with app.app_context():
-    db.create_all()
+try:
+    with app.app_context():
+        db.create_all()
+        print("Database tables created successfully")
+except Exception as e:
+    print(f"WARNING: Failed to initialize database: {str(e)}")
+    print("App will continue but database features may not work")
 
 API_KEY = os.getenv("API_KEY")
 BIBLE_ID = "de4e12af7f28f599-02"
