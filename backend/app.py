@@ -9,7 +9,17 @@ from PIL import Image
 import base64
 
 app = Flask(__name__)
-CORS(app)
+# Configure CORS to allow requests from your Vercel frontend
+CORS(app, resources={
+    r"/api/*": {
+        "origins": [
+            "http://localhost:3000",  # Local development
+            os.environ.get('FRONTEND_URL', '*')  # Production frontend URL
+        ],
+        "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        "allow_headers": ["Content-Type", "Authorization"]
+    }
+})
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL')
 db = SQLAlchemy(app)
 
