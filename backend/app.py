@@ -64,7 +64,19 @@ except Exception as e:
 API_KEY = os.getenv("API_KEY")
 BIBLE_ID = "de4e12af7f28f599-02"
 
-# Test
+print("=" * 50)
+print("Flask app initialized successfully")
+print(f"DATABASE_URL set: {bool(os.environ.get('DATABASE_URL'))}")
+print(f"API_KEY set: {bool(API_KEY)}")
+print(f"FRONTEND_URL: {os.environ.get('FRONTEND_URL', 'Not set')}")
+print("=" * 50)
+
+# Root route for health check
+@app.route('/', methods=['GET'])
+def root():
+    return make_response(jsonify({'status': 'ok', 'message': 'Bible Chatbot API is running'}), 200)
+
+# Test route
 @app.route('/test', methods=['GET'])
 def test():
     return make_response(jsonify({'message': 'Test successful'}), 200)

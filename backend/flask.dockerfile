@@ -11,5 +11,5 @@ COPY backend/app.py ./
 
 EXPOSE 4000
 
-# Use Gunicorn as production WSGI server
-CMD gunicorn --bind 0.0.0.0:${PORT:-4000} --workers 2 --threads 2 app:app
+# Use Gunicorn as production WSGI server with increased timeout
+CMD gunicorn --bind 0.0.0.0:${PORT:-4000} --workers 2 --threads 2 --timeout 120 --access-logfile - --error-logfile - app:app
