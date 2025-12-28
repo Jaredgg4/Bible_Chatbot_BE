@@ -7,6 +7,9 @@ from flask_sqlalchemy import SQLAlchemy
 import bcrypt
 from PIL import Image
 import base64
+from dotenv import load_dotenv
+
+load_dotenv()
 
 app = Flask(__name__)
 # Configure CORS to allow requests from your Vercel frontend
@@ -27,6 +30,9 @@ if not database_url:
     print("WARNING: DATABASE_URL not set. Database features will not work.")
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///temp.db'  # Fallback for testing
 else:
+    # Fix for Render: SQLAlchemy requires 'postgresql://' but Render may provide 'postgres://'
+    if database_url.startswith('postgres://'):
+        database_url = database_url.replace('postgres://', 'postgresql://', 1)
     app.config['SQLALCHEMY_DATABASE_URI'] = database_url
 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -220,6 +226,24 @@ def get_books():
     
     response = requests.get(url, headers={"api-key": API_KEY})
     return {"response": response.json()}
+
+@app.route("/api/scripture")
+def get_scripture():
+    verse_id = request.args.get('verse_id', 'GEN.1.1')
+    url = f"https://rest.api.bible/v1/bibles/{BIBLE_ID}/verses/{verse_id}"
+    
+    response = requests.get(url, headers={"api-key": API_KEY})
+    return {"response": response.json()}
+
+@app.route("/api/chapter")
+def get_chapter():
+    chapter_id = request.args.get('chapter_id', 'GEN.1')
+    
+    url = f"https://rest.api.bible/v1/bibles/{BIBLE_ID}/chapters/{chapter_id}/verses"
+    
+    response = requests.get(url, headers={"api-key": API_KEY})
+    return {"response": response.json()}
+    
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 4000))

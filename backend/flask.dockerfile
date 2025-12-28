@@ -2,12 +2,12 @@ FROM python:3.12-slim
 
 WORKDIR /app
 
-# Copy requirements and install dependencies from backend folder
-COPY backend/requirements.txt ./
+# Copy requirements and install dependencies
+COPY requirements.txt ./
 RUN pip install -r requirements.txt
 
-# Copy application code from backend folder
-COPY backend/app.py ./
+# Copy application code
+COPY app.py ./
 
 EXPOSE 4000
 
