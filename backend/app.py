@@ -44,6 +44,7 @@ class Users(db.Model):
     email = db.Column(db.String(120), unique=True, nullable=False)
     password = db.Column(db.String(120), nullable=False)
     avatar = db.Column(db.LargeBinary, nullable=False)
+    notes = db.relationship('Notes', backref='user', lazy=True)
 
     def json(self):
         # Convert binary avatar to base64 string for display
@@ -56,7 +57,34 @@ class Users(db.Model):
             'username': self.username,
             'email': self.email,
             'password': self.password,
-            'avatar': avatar_base64
+            'avatar': avatar_base64,
+            'notes': [note.json() for note in self.notes]
+        }
+
+class Notes(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(80), nullable=False)
+    content = db.Column(db.Text, nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+
+    def json(self):
+        return {
+            'id': self.id,
+            'title': self.title,
+            'content': self.content,
+            'user_id': self.user_id
+        }
+
+class Verses(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    verse = db.Column(db.String(80), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+
+    def json(self):
+        return {
+            'id': self.id,
+            'verse': self.verse,
+            'user_id': self.user_id
         }
 
 try:
@@ -206,6 +234,45 @@ def delete_user(id):
             return make_response(jsonify({"error": "User not found"}), 404)
     except Exception as e:
         return make_response(jsonify({"error": str(e)}), 500)
+
+#Save User Note
+@app.route('/api/users/<int:id>/notes', methods=['POST'])
+def save_user_note(id):
+    try:
+        user = Users.query.filter_by(id=id).first()
+        if user:
+            data = request.get_json()
+            new_note = Notes(
+                title=data.get('title'),
+                content=data.get('content'),
+                user_id=id
+            )
+            db.session.add(new_note)
+            db.session.commit()
+            return make_response(jsonify({"message": "Note saved successfully", "note": new_note.json()}), 201)
+        else:
+            return make_response(jsonify({"error": "User not found"}), 404)
+    except Exception as e:
+        return make_response(jsonify({"error": str(e)}), 500)
+
+@app.route('/api/users/<int:id>/verses', methods=['POST'])
+def save_user_verse(id):
+    try:
+        user = Users.query.filter_by(id=id).first()
+        if user:
+            data = request.get_json()
+            new_verse = Verses(
+                verse=data.get('verse'),
+                user_id=id
+            )
+            db.session.add(new_verse)
+            db.session.commit()
+            return make_response(jsonify({"message": "Verse saved successfully", "verse": new_verse.json()}), 201)
+        else:
+            return make_response(jsonify({"error": "User not found"}), 404)
+    except Exception as e:
+        return make_response(jsonify({"error": str(e)}), 500)
+
 
 # Get bible
 @app.route('/api/bibles')
